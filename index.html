@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Caricamento CSV - Farmavista</title>
+    <style>
+        :root {
+            --primary-color: #005ea8;
+            --secondary-color: #e6f0fa;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--secondary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            width: 420px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .logo {
+            max-width: 180px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        input {
+            margin: 8px 0;
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success {
+            background: #e6ffea;
+            color: #1e7e34;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .pwd-error {
+            color: #c00;
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="logo.png" alt="Logo Farmavista" class="logo">
+
+    <h1>Caricamento file CSV</h1>
+    <p>Inserisci i tuoi dati e carica il file del negozio.</p>
+
+    <input type="password" id="passwordField" placeholder="Inserisci Password">
+    <div class="pwd-error" id="passwordError">❌ Password errata</div>
+
+    <form id="uploadForm">
+        <input type="text" name="utente" id="nomeUtente" placeholder="Nome e Cognome" required>
+
+        <input type="file" name="data" id="fileInput" accept=".csv" required>
+
+        <button type="submit" id="uploadBtn" disabled>
+            📤 Carica CSV
+        </button>
+    </form>
+
+    <div id="statusMessage" class="message"></div>
+
+    <div class="note">
+        Accesso riservato – Solo file .CSV
+    </div>
+</div>
+
+<script>
+    const CORRECT_PASSWORD = "Farmavista26!";
+    const WEBHOOK_URL = "https://Gianluca-pasanisi.app.n8n.cloud/webhook/invio-csv-ottici";
+
+    const passwordInput = document.getElementById('passwordField');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const pwdError = document.getElementById('passwordError');
+    const statusMsg = document.getElementById('statusMessage');
+    const form = document.getElementById('uploadForm');
+
+    // Funzione per validare la password e sbloccare il tasto
+    passwordInput.addEventListener('input', function () {
+        if (passwordInput.value === CORRECT_PASSWORD) {
+            uploadBtn.disabled = false;
+            pwdError.style.display = 'none';
+            passwordInput.style.borderColor = '#2ecc71';
+        } else {
+            uploadBtn.disabled = true;
+            if (passwordInput.value.length > 0) {
+                pwdError.style.display = 'block';
+            }
+        }
+    });
+
+    // Gestione dell'invio con feedback reale
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault(); // Impedisce il ricaricamento della pagina
+
+        // Stato di caricamento
+        uploadBtn.disabled = true;
+        uploadBtn.innerText = "Caricamento in corso... ⏳";
+        statusMsg.style.display = 'none';
+
+        const formData = new FormData(form);
+        // Aggiungiamo anche la password ai dati inviati per sicurezza lato n8n
+        formData.append('password_security', passwordInput.value);
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                // Successo
+                statusMsg.innerText = "✅ Upload riuscito. Il file è stato ricevuto correttamente.";
+                statusMsg.className = "message success";
+                statusMsg.style.display = 'block';
+                form.reset();
+                passwordInput.value = "";
+                uploadBtn.disabled = true;
+            } else {
+                throw new Error("Risposta del server non valida");
+            }
+        } catch (error) {
+            // Errore
+            statusMsg.innerText = "❌ Errore durante l'invio. Verifica la connessione o n8n.";
+            statusMsg.className = "message error-msg";
+            statusMsg.style.display = 'block';
+        } finally {
+            uploadBtn.innerText = "📤 Carica CSV";
+        }
+    });
+</script>
+
+</body>
+</html>
