@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Caricamento CSV - Farmavista</title>
+    <style>
+        :root { --primary-color: #005ea8; --secondary-color: #e6f0fa; }
+        body { font-family: Arial, sans-serif; background: var(--secondary-color); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; width: 420px; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; }
+        .logo { max-width: 180px; margin-bottom: 20px; }
+        h1 { font-size: 20px; color: var(--primary-color); margin-bottom: 10px; }
+        input { margin: 8px 0; width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        .message { margin-top: 20px; padding: 12px; border-radius: 6px; font-size: 14px; display: none; }
+        .success { background: #e6ffea; color: #1e7e34; border: 1px solid #c3e6cb; }
+        .error-msg { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .pwd-error { color: #c00; font-size: 12px; margin-bottom: 10px; display: none; text-align: left; padding-left: 5px; }
+        .label-text { text-align: left; display: block; font-size: 13px; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="logo.png" alt="Logo Farmavista" class="logo">
+    <h1>Caricamento Report</h1>
+    
+    <form id="uploadForm">
+        <input type="text" name="utente" id="nomeUtente" placeholder="Nome e Cognome" required>
+
+        <input type="password" id="passwordField" placeholder="Inserisci Password di accesso">
+        <div class="pwd-error" id="passwordError">⚠️ Password errata</div>
+
+        <span class="label-text">Seleziona il file CSV da Iride:</span>
+        <input type="file" name="data" id="fileInput" accept=".csv" required>
+
+        <button type="submit" id="uploadBtn" disabled>📤 Carica CSV</button>
+    </form>
+
+    <div id="statusMessage" class="message"></div>
+</div>
+
+<script>
+    const CORRECT_PASSWORD = "Farmavista26!";
+    // RICORDA: Cambia in /webhook/ (senza -test) quando attivi l'interruttore su n8n
+    const WEBHOOK_URL = "https://gianluca-pasanisi.app.n8n.cloud/webhook-test/invio-csv-ottici";
+
+    const passwordInput = document.getElementById('passwordField');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const pwdError = document.getElementById('passwordError');
+    const statusMsg = document.getElementById('statusMessage');
+    const form = document.getElementById('uploadForm');
+
+    // Validazione password per sbloccare il tasto
+    passwordInput.addEventListener('input', function () {
+        if (passwordInput.value === CORRECT_PASSWORD) {
+            uploadBtn.disabled = false;
+            pwdError.style.display = 'none';
+            passwordInput.style.borderColor = '#2ecc71';
+        } else {
+            uploadBtn.disabled = true;
+            if (passwordInput.value.length >= 4) {
+                pwdError.style.display = 'block';
+            }
+        }
+    });
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        
+        uploadBtn.disabled = true;
+        uploadBtn.innerText = "Invio in corso... ⏳";
+        statusMsg.style.display = 'none';
+
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+        
+        // Costruiamo il pacchetto dati per n8n
+        formData.append('data', fileInput.files[0]); 
+        formData.append('utente', document.getElementById('nomeUtente').value);
+        formData.append('password_security', passwordInput.value);
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                statusMsg.innerText = "✅ Ottimo! File inviato con successo.";
+                statusMsg.className = "message success";
+                statusMsg.style.display = 'block';
+                form.reset();
+                uploadBtn.disabled = true;
+                passwordInput.style.borderColor = '#ccc';
+            } else {
+                throw new Error();
+            }
+        } catch (error) {
+            statusMsg.innerText = "❌ Errore di invio. Assicurati che n8n sia attivo.";
+            statusMsg.className = "message error-msg";
+            statusMsg.style.display = 'block';
+        } finally {
+            uploadBtn.innerText = "📤 Carica CSV";
+        }
+    });
+</script>
+
+</body>
+</html>
