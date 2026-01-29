@@ -218,8 +218,8 @@
         loadingMsg.style.display = 'none';
         successMsg.style.display = 'block';
         
-        // Reset automatico dopo 4 secondi per permettere nuovi caricamenti
-        setTimeout(resetForm, 4000);
+        // Reset automatico dopo 10 secondi per permettere nuovi caricamenti
+        setTimeout(resetForm, 10000);
       } else {
         throw new Error("Errore Server");
       }
