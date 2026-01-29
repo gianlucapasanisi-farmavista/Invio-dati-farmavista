@@ -55,8 +55,14 @@
       border: 1px dashed var(--primary-color);
     }
 
-    input {
+    /* Stile per il contenitore password con l'occhio */
+    .password-container {
+      position: relative;
+      width: 100%;
       margin: 10px 0;
+    }
+
+    input {
       width: 100%;
       padding: 12px;
       box-sizing: border-box;
@@ -65,7 +71,26 @@
       font-size: 14px;
     }
 
-    button {
+    input[type="password"], input[type="text"] {
+      padding-right: 45px; /* Spazio per l'icona dell'occhio */
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 18px;
+      padding: 0;
+      color: #666;
+      display: flex;
+      align-items: center;
+    }
+
+    button#uploadBtn {
       background-color: var(--primary-color);
       color: white;
       border: none;
@@ -103,7 +128,7 @@
       border: 1px solid #c3e6cb;
     }
 
-    .error {
+    .error-text {
       color: var(--error-color);
       font-size: 13px;
       margin-top: 5px;
@@ -132,11 +157,17 @@
   <h1>Caricamento Venduto</h1>
   <span id="displayNegozio">Identificazione negozio in corso...</span>
 
-  <input type="password" id="password" placeholder="Inserisci Password Aziendale">
-  <div class="error" id="passwordError">❌ Password errata</div>
+  <div class="password-container">
+    <input type="password" id="password" 
+           placeholder="Inserisci Password Aziendale" 
+           autocomplete="current-password" 
+           name="password">
+    <button type="button" id="toggleBtn" class="toggle-password" title="Mostra/Nascondi">👁️</button>
+  </div>
+  <div class="error-text" id="passwordError">❌ Password errata</div>
 
   <form id="uploadForm">
-    <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" required>
+    <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" required style="margin-top: 10px;">
     <button type="submit" id="uploadBtn" disabled>📤 INVIA DATI</button>
   </form>
 
@@ -154,7 +185,6 @@
 <script>
   // --- CONFIGURAZIONE ---
   const CORRECT_PASSWORD = "Farmavista26!";
-  // Inserisci qui il tuo URL Webhook di n8n (Production o Test)
   const WEBHOOK_URL = "https://gianluca-pasanisi.app.n8n.cloud/webhook-test/invio-csv-ottici"; 
 
   // --- LOGICA RILEVAMENTO NEGOZIO ---
@@ -163,11 +193,19 @@
   document.getElementById('displayNegozio').innerText = "Punto Vendita: " + nomeNegozio.toUpperCase();
 
   const passwordInput = document.getElementById('password');
+  const toggleBtn = document.getElementById('toggleBtn');
   const uploadBtn = document.getElementById('uploadBtn');
   const passwordError = document.getElementById('passwordError');
   const successMsg = document.getElementById('successMessage');
   const loadingMsg = document.getElementById('loadingMessage');
   const uploadForm = document.getElementById('uploadForm');
+
+  // --- FUNZIONE MOSTRA/NASCONDI PASSWORD ---
+  toggleBtn.addEventListener('click', () => {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    toggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+  });
 
   // Funzione Reset Pagina
   function resetForm() {
@@ -177,17 +215,22 @@
     passwordError.style.display = 'none';
     successMsg.style.display = 'none';
     loadingMsg.style.display = 'none';
+    passwordInput.setAttribute('type', 'password');
+    toggleBtn.textContent = '👁️';
   }
 
-  // Verifica Password in tempo reale
+  // Verifica Password
   passwordInput.addEventListener('input', () => {
     if (passwordInput.value === CORRECT_PASSWORD) {
       uploadBtn.disabled = false;
       passwordError.style.display = 'none';
     } else {
       uploadBtn.disabled = true;
+      // Mostra errore solo se la lunghezza è simile o superiore alla corretta
       if (passwordInput.value.length >= CORRECT_PASSWORD.length) {
         passwordError.style.display = 'block';
+      } else {
+        passwordError.style.display = 'none';
       }
     }
   });
@@ -202,10 +245,11 @@
     uploadBtn.disabled = true;
     loadingMsg.style.display = 'block';
 
-    // Costruzione URL con parametro negozio
     const finalUrl = `${WEBHOOK_URL}?negozio=${encodeURIComponent(nomeNegozio)}`;
 
     const formData = new FormData();
+    // ATTENZIONE: n8n leggerà questo campo come 'data'. 
+    // Assicurati che nel nodo 'Extract from File' di n8n sia impostato lo stesso nome.
     formData.append('data', fileInput.files[0]);
 
     try {
@@ -217,15 +261,14 @@
       if (response.ok) {
         loadingMsg.style.display = 'none';
         successMsg.style.display = 'block';
-        
-        // Reset automatico dopo 10 secondi per permettere nuovi caricamenti
         setTimeout(resetForm, 10000);
       } else {
         throw new Error("Errore Server");
       }
     } catch (error) {
       alert("⚠️ Errore durante l'invio. Verifica la connessione o n8n e riprova.");
-      resetForm();
+      uploadBtn.disabled = false;
+      loadingMsg.style.display = 'none';
     }
   });
 </script>
