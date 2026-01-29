@@ -33,33 +33,20 @@
       text-align: center;
     }
 
-    .logo {
-      max-width: 160px;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 22px;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
+    .logo { max-width: 160px; margin-bottom: 20px; }
+    h1 { font-size: 22px; color: var(--primary-color); margin-bottom: 5px; }
 
     #displayNegozio {
-      display: block;
-      font-weight: bold;
-      background: #f0f7ff;
-      padding: 8px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      color: #333;
-      border: 1px dashed var(--primary-color);
+      display: block; font-weight: bold; background: #f0f7ff;
+      padding: 8px; border-radius: 6px; margin-bottom: 20px;
+      color: #333; border: 1px dashed var(--primary-color);
     }
 
-    /* Stile per il contenitore password con l'occhio */
-    .password-container {
+    /* Struttura Input Password con Occhio */
+    .pass-box {
       position: relative;
       width: 100%;
-      margin: 10px 0;
+      margin-bottom: 5px;
     }
 
     input {
@@ -72,22 +59,20 @@
     }
 
     input[type="password"], input[type="text"] {
-      padding-right: 45px; /* Spazio per l'icona dell'occhio */
+      padding-right: 45px;
     }
 
-    .toggle-password {
+    .eye-btn {
       position: absolute;
-      right: 12px;
+      right: 10px;
       top: 50%;
       transform: translateY(-50%);
-      cursor: pointer;
       background: none;
       border: none;
+      cursor: pointer;
       font-size: 18px;
       padding: 0;
       color: #666;
-      display: flex;
-      align-items: center;
     }
 
     button#uploadBtn {
@@ -100,18 +85,11 @@
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 15px;
       transition: background 0.3s;
     }
 
-    button:hover:not(:disabled) {
-      background-color: #004a85;
-    }
-
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
 
     .message {
       display: none;
@@ -119,75 +97,39 @@
       padding: 15px;
       border-radius: 6px;
       font-size: 14px;
-      line-height: 1.4;
     }
 
-    .success {
-      background: #e6ffea;
-      color: var(--success-color);
-      border: 1px solid #c3e6cb;
-    }
-
-    .error-text {
-      color: var(--error-color);
-      font-size: 13px;
-      margin-top: 5px;
-      display: none;
-    }
-
-    .loading {
-      display: none;
-      margin-top: 15px;
-      color: #666;
-      font-style: italic;
-    }
-
-    .footer-note {
-      margin-top: 20px;
-      font-size: 11px;
-      color: #999;
-    }
+    .success { background: #e6ffea; color: var(--success-color); border: 1px solid #c3e6cb; }
+    .error-msg { color: var(--error-color); font-size: 13px; display: none; margin-bottom: 10px; }
+    .loading { display: none; margin-top: 15px; color: #666; font-style: italic; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <img src="logo.png" alt="Farmavista" class="logo">
-
   <h1>Caricamento Venduto</h1>
-  <span id="displayNegozio">Identificazione negozio in corso...</span>
+  <span id="displayNegozio">Identificazione negozio...</span>
 
-  <div class="password-container">
-    <input type="password" id="password" 
-           placeholder="Inserisci Password Aziendale" 
-           autocomplete="current-password" 
-           name="password">
-    <button type="button" id="toggleBtn" class="toggle-password" title="Mostra/Nascondi">👁️</button>
+  <div class="pass-box">
+    <input type="password" id="password" placeholder="Password Aziendale" autocomplete="current-password">
+    <button type="button" id="toggleBtn" class="eye-btn">👁️</button>
   </div>
-  <div class="error-text" id="passwordError">❌ Password errata</div>
+  <div class="error-msg" id="passwordError">❌ Password errata</div>
 
   <form id="uploadForm">
-    <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" required style="margin-top: 10px;">
+    <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" required>
     <button type="submit" id="uploadBtn" disabled>📤 INVIA DATI</button>
   </form>
 
-  <div id="loadingMessage" class="loading">⏳ Elaborazione e invio in corso...</div>
-  
-  <div id="successMessage" class="message success">
-    ✅ <strong>Invio riuscito!</strong><br>
-    Il file è stato ricevuto correttamente.<br>
-    La pagina si resetterà tra pochi secondi.
-  </div>
-
-  <p class="footer-note">Area riservata ai punti vendita Farmavista</p>
+  <div id="loadingMessage" class="loading">⏳ Invio in corso...</div>
+  <div id="successMessage" class="message success">✅ <strong>Invio riuscito!</strong></div>
 </div>
 
 <script>
-  // --- CONFIGURAZIONE ---
   const CORRECT_PASSWORD = "Farmavista26!";
   const WEBHOOK_URL = "https://gianluca-pasanisi.app.n8n.cloud/webhook-test/invio-csv-ottici"; 
 
-  // --- LOGICA RILEVAMENTO NEGOZIO ---
   const urlParams = new URLSearchParams(window.location.search);
   const nomeNegozio = urlParams.get('negozio') || 'Sconosciuto';
   document.getElementById('displayNegozio').innerText = "Punto Vendita: " + nomeNegozio.toUpperCase();
@@ -196,82 +138,47 @@
   const toggleBtn = document.getElementById('toggleBtn');
   const uploadBtn = document.getElementById('uploadBtn');
   const passwordError = document.getElementById('passwordError');
-  const successMsg = document.getElementById('successMessage');
-  const loadingMsg = document.getElementById('loadingMessage');
   const uploadForm = document.getElementById('uploadForm');
 
-  // --- FUNZIONE MOSTRA/NASCONDI PASSWORD ---
+  // Mostra/Nascondi Password
   toggleBtn.addEventListener('click', () => {
-    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordInput.setAttribute('type', type);
-    toggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+    const isPass = passwordInput.type === 'password';
+    passwordInput.type = isPass ? 'text' : 'password';
+    toggleBtn.textContent = isPass ? '🙈' : '👁️';
   });
 
-  // Funzione Reset Pagina
-  function resetForm() {
-    uploadForm.reset();
-    passwordInput.value = "";
-    uploadBtn.disabled = true;
-    passwordError.style.display = 'none';
-    successMsg.style.display = 'none';
-    loadingMsg.style.display = 'none';
-    passwordInput.setAttribute('type', 'password');
-    toggleBtn.textContent = '👁️';
-  }
-
-  // Verifica Password
+  // Validazione Password
   passwordInput.addEventListener('input', () => {
-    if (passwordInput.value === CORRECT_PASSWORD) {
-      uploadBtn.disabled = false;
-      passwordError.style.display = 'none';
-    } else {
-      uploadBtn.disabled = true;
-      // Mostra errore solo se la lunghezza è simile o superiore alla corretta
-      if (passwordInput.value.length >= CORRECT_PASSWORD.length) {
-        passwordError.style.display = 'block';
-      } else {
-        passwordError.style.display = 'none';
-      }
-    }
+    const isCorrect = passwordInput.value === CORRECT_PASSWORD;
+    uploadBtn.disabled = !isCorrect;
+    passwordError.style.display = (passwordInput.value.length >= CORRECT_PASSWORD.length && !isCorrect) ? 'block' : 'none';
   });
 
-  // Gestione Invio File
+  // Invio Form
   uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const fileInput = document.getElementById('fileInput');
-    if (!fileInput.files[0]) return;
-
+    document.getElementById('loadingMessage').style.display = 'block';
     uploadBtn.disabled = true;
-    loadingMsg.style.display = 'block';
-
-    const finalUrl = `${WEBHOOK_URL}?negozio=${encodeURIComponent(nomeNegozio)}`;
 
     const formData = new FormData();
-    // ATTENZIONE: n8n leggerà questo campo come 'data'. 
-    // Assicurati che nel nodo 'Extract from File' di n8n sia impostato lo stesso nome.
-    formData.append('data', fileInput.files[0]);
+    formData.append('data', document.getElementById('fileInput').files[0]);
 
     try {
-      const response = await fetch(finalUrl, {
+      const response = await fetch(`${WEBHOOK_URL}?negozio=${encodeURIComponent(nomeNegozio)}`, {
         method: 'POST',
         body: formData
       });
 
       if (response.ok) {
-        loadingMsg.style.display = 'none';
-        successMsg.style.display = 'block';
-        setTimeout(resetForm, 10000);
-      } else {
-        throw new Error("Errore Server");
-      }
+        document.getElementById('loadingMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'block';
+        setTimeout(() => location.reload(), 5000);
+      } else { throw new Error(); }
     } catch (error) {
-      alert("⚠️ Errore durante l'invio. Verifica la connessione o n8n e riprova.");
-      uploadBtn.disabled = false;
-      loadingMsg.style.display = 'none';
+      alert("Errore invio. Riprova.");
+      location.reload();
     }
   });
 </script>
-
 </body>
 </html>
